@@ -1,0 +1,98 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// -------------------- Định nghĩa cấu trúc nút cây Quadtree --------------------
+class Node {
+public:
+    bool val;          // Giá trị của nút (0 hoặc 1)
+    bool isLeaf;       // Xác định nút lá hay nút cha
+    Node* topLeft;     
+    Node* topRight;    
+    Node* bottomLeft;  
+    Node* bottomRight; 
+
+    Node(bool _val, bool _isLeaf) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = topRight = bottomLeft = bottomRight = nullptr;
+    }
+};
+
+// -------------------- Hàm kiểm tra vùng đồng nhất --------------------
+bool isUniform(vector<vector<int>>& grid, int x, int y, int size) {
+    int firstVal = grid[x][y];
+    for (int i = x; i < x + size; i++) {
+        for (int j = y; j < y + size; j++) {
+            if (grid[i][j] != firstVal) {
+                return false; // Không đồng nhất
+            }
+        }
+    }
+    return true; // Đồng nhất
+}
+
+// -------------------- Hàm đệ quy xây dựng Quadtree --------------------
+Node* buildQuadTree(vector<vector<int>>& grid, int x, int y, int size) {
+    if (isUniform(grid, x, y, size)) {
+        return new Node(grid[x][y] == 1, true); // Nút lá
+    }
+
+    // Nếu không đồng nhất → chia làm 4 vùng
+    int newSize = size / 2;
+    Node* root = new Node(true, false); // val có thể tùy ý vì là nút cha
+    root->topLeft = buildQuadTree(grid, x, y, newSize);
+    root->topRight = buildQuadTree(grid, x, y + newSize, newSize);
+    root->bottomLeft = buildQuadTree(grid, x + newSize, y, newSize);
+    root->bottomRight = buildQuadTree(grid, x + newSize, y + newSize, newSize);
+
+    return root;
+}
+
+// -------------------- Hàm khởi tạo từ toàn bộ ma trận --------------------
+Node* construct(vector<vector<int>>& grid) {
+    int n = grid.size();
+    return buildQuadTree(grid, 0, 0, n);
+}
+
+// -------------------- Hàm in ra thông tin cây (duyệt theo mức) --------------------
+void printTree(Node* root) {
+    if (!root) return;
+    queue<Node*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        Node* node = q.front();
+        q.pop();
+        if (node->isLeaf) {
+            cout << "[Leaf: " << node->val << "] ";
+        } else {
+            cout << "[Internal] ";
+            q.push(node->topLeft);
+            q.push(node->topRight);
+            q.push(node->bottomLeft);
+            q.push(node->bottomRight);
+        }
+    }
+    cout << endl;
+}
+
+// -------------------- Hàm main minh họa --------------------
+int main() {
+    vector<vector<int>> grid = {
+        {1,1,1,1,0,0,0,0},
+        {1,1,1,1,0,0,0,0},
+        {1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1},
+        {1,1,1,1,0,0,0,0},
+        {1,1,1,1,0,0,0,0},
+        {1,1,1,1,0,0,0,0},
+        {1,1,1,1,0,0,0,0}
+    };
+
+    Node* root = construct(grid);
+
+    cout << "Quadtree constructed successfully!\n";
+    printTree(root); // In ra cấu trúc cây
+
+    return 0;
+}
